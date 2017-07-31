@@ -1,0 +1,330 @@
+<page>
+<use name="mark/disk(sx)" pos= "-66.6667 -100" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-33.3333 -100" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "0 -100" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "33.3333 -100" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "66.6667 -100" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "100 -100" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "100 -66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "100 -33.3333" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "100 0" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "100 33.3333" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "100 66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "100 100" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "66.6667 100" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "33.3333 100" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "0 100" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-33.3333 100" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-66.6667 100" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-100 100" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-100 66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-100 33.3333" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-100 0" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-100 -33.3333" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-100 -66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-100 -100" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-66.6667 -66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-33.3333 -66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "2.04108e-15 -66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "33.3333 -66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "66.6667 -66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "66.6667 -66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "66.6667 -66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "66.6667 -33.3333" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "66.6667 2.04108e-15" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "66.6667 33.3333" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "66.6667 66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "66.6667 66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "66.6667 66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "33.3333 66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-2.04108e-15 66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-33.3333 66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-66.6667 66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-66.6667 66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-66.6667 66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-66.6667 33.3333" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-66.6667 -2.04108e-15" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-66.6667 -33.3333" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-66.6667 -66.6667" size="normal" stroke="black"/>
+<use name="mark/disk(sx)" pos= "-66.6667 -66.6667" size="normal" stroke="black"/>
+<path stroke = "black"> 
+-66.6667 -100 m 
+-33.3333 -100 l 
+</path> 
+<path stroke = "black"> 
+-66.6667 -66.6667 m 
+-66.6667 -100 l 
+</path> 
+<path stroke = "black"> 
+-33.3333 -66.6667 m 
+-66.6667 -66.6667 l 
+</path> 
+<path stroke = "black"> 
+-33.3333 -100 m 
+-33.3333 -66.6667 l 
+</path> 
+<path stroke = "black"> 
+-33.3333 -100 m 
+0 -100 l 
+</path> 
+<path stroke = "black"> 
+2.04108e-15 -66.6667 m 
+-33.3333 -66.6667 l 
+</path> 
+<path stroke = "black"> 
+0 -100 m 
+2.04108e-15 -66.6667 l 
+</path> 
+<path stroke = "black"> 
+0 -100 m 
+33.3333 -100 l 
+</path> 
+<path stroke = "black"> 
+33.3333 -66.6667 m 
+2.04108e-15 -66.6667 l 
+</path> 
+<path stroke = "black"> 
+33.3333 -100 m 
+33.3333 -66.6667 l 
+</path> 
+<path stroke = "black"> 
+33.3333 -100 m 
+66.6667 -100 l 
+</path> 
+<path stroke = "black"> 
+66.6667 -66.6667 m 
+33.3333 -66.6667 l 
+</path> 
+<path stroke = "black"> 
+66.6667 -100 m 
+66.6667 -66.6667 l 
+</path> 
+<path stroke = "black"> 
+66.6667 -100 m 
+100 -100 l 
+</path> 
+<path stroke = "black"> 
+66.6667 -66.6667 m 
+66.6667 -66.6667 l 
+</path> 
+<path stroke = "black"> 
+100 -100 m 
+66.6667 -66.6667 l 
+</path> 
+<path stroke = "black"> 
+100 -100 m 
+100 -66.6667 l 
+</path> 
+<path stroke = "black"> 
+66.6667 -66.6667 m 
+66.6667 -66.6667 l 
+</path> 
+<path stroke = "black"> 
+100 -66.6667 m 
+66.6667 -66.6667 l 
+</path> 
+<path stroke = "black"> 
+100 -66.6667 m 
+100 -33.3333 l 
+</path> 
+<path stroke = "black"> 
+66.6667 -33.3333 m 
+66.6667 -66.6667 l 
+</path> 
+<path stroke = "black"> 
+100 -33.3333 m 
+66.6667 -33.3333 l 
+</path> 
+<path stroke = "black"> 
+100 -33.3333 m 
+100 0 l 
+</path> 
+<path stroke = "black"> 
+66.6667 2.04108e-15 m 
+66.6667 -33.3333 l 
+</path> 
+<path stroke = "black"> 
+100 0 m 
+66.6667 2.04108e-15 l 
+</path> 
+<path stroke = "black"> 
+100 0 m 
+100 33.3333 l 
+</path> 
+<path stroke = "black"> 
+66.6667 33.3333 m 
+66.6667 2.04108e-15 l 
+</path> 
+<path stroke = "black"> 
+100 33.3333 m 
+66.6667 33.3333 l 
+</path> 
+<path stroke = "black"> 
+100 33.3333 m 
+100 66.6667 l 
+</path> 
+<path stroke = "black"> 
+66.6667 66.6667 m 
+66.6667 33.3333 l 
+</path> 
+<path stroke = "black"> 
+100 66.6667 m 
+66.6667 66.6667 l 
+</path> 
+<path stroke = "black"> 
+100 66.6667 m 
+100 100 l 
+</path> 
+<path stroke = "black"> 
+66.6667 66.6667 m 
+66.6667 66.6667 l 
+</path> 
+<path stroke = "black"> 
+100 100 m 
+66.6667 66.6667 l 
+</path> 
+<path stroke = "black"> 
+100 100 m 
+66.6667 100 l 
+</path> 
+<path stroke = "black"> 
+66.6667 66.6667 m 
+66.6667 66.6667 l 
+</path> 
+<path stroke = "black"> 
+66.6667 100 m 
+66.6667 66.6667 l 
+</path> 
+<path stroke = "black"> 
+66.6667 100 m 
+33.3333 100 l 
+</path> 
+<path stroke = "black"> 
+33.3333 66.6667 m 
+66.6667 66.6667 l 
+</path> 
+<path stroke = "black"> 
+33.3333 100 m 
+33.3333 66.6667 l 
+</path> 
+<path stroke = "black"> 
+33.3333 100 m 
+0 100 l 
+</path> 
+<path stroke = "black"> 
+-2.04108e-15 66.6667 m 
+33.3333 66.6667 l 
+</path> 
+<path stroke = "black"> 
+0 100 m 
+-2.04108e-15 66.6667 l 
+</path> 
+<path stroke = "black"> 
+0 100 m 
+-33.3333 100 l 
+</path> 
+<path stroke = "black"> 
+-33.3333 66.6667 m 
+-2.04108e-15 66.6667 l 
+</path> 
+<path stroke = "black"> 
+-33.3333 100 m 
+-33.3333 66.6667 l 
+</path> 
+<path stroke = "black"> 
+-33.3333 100 m 
+-66.6667 100 l 
+</path> 
+<path stroke = "black"> 
+-66.6667 66.6667 m 
+-33.3333 66.6667 l 
+</path> 
+<path stroke = "black"> 
+-66.6667 100 m 
+-66.6667 66.6667 l 
+</path> 
+<path stroke = "black"> 
+-66.6667 100 m 
+-100 100 l 
+</path> 
+<path stroke = "black"> 
+-66.6667 66.6667 m 
+-66.6667 66.6667 l 
+</path> 
+<path stroke = "black"> 
+-100 100 m 
+-66.6667 66.6667 l 
+</path> 
+<path stroke = "black"> 
+-100 100 m 
+-100 66.6667 l 
+</path> 
+<path stroke = "black"> 
+-66.6667 66.6667 m 
+-66.6667 66.6667 l 
+</path> 
+<path stroke = "black"> 
+-100 66.6667 m 
+-66.6667 66.6667 l 
+</path> 
+<path stroke = "black"> 
+-100 66.6667 m 
+-100 33.3333 l 
+</path> 
+<path stroke = "black"> 
+-66.6667 33.3333 m 
+-66.6667 66.6667 l 
+</path> 
+<path stroke = "black"> 
+-100 33.3333 m 
+-66.6667 33.3333 l 
+</path> 
+<path stroke = "black"> 
+-100 33.3333 m 
+-100 0 l 
+</path> 
+<path stroke = "black"> 
+-66.6667 -2.04108e-15 m 
+-66.6667 33.3333 l 
+</path> 
+<path stroke = "black"> 
+-100 0 m 
+-66.6667 -2.04108e-15 l 
+</path> 
+<path stroke = "black"> 
+-100 0 m 
+-100 -33.3333 l 
+</path> 
+<path stroke = "black"> 
+-66.6667 -33.3333 m 
+-66.6667 -2.04108e-15 l 
+</path> 
+<path stroke = "black"> 
+-100 -33.3333 m 
+-66.6667 -33.3333 l 
+</path> 
+<path stroke = "black"> 
+-100 -33.3333 m 
+-100 -66.6667 l 
+</path> 
+<path stroke = "black"> 
+-66.6667 -66.6667 m 
+-66.6667 -33.3333 l 
+</path> 
+<path stroke = "black"> 
+-100 -66.6667 m 
+-66.6667 -66.6667 l 
+</path> 
+<path stroke = "black"> 
+-100 -66.6667 m 
+-100 -100 l 
+</path> 
+<path stroke = "black"> 
+-66.6667 -66.6667 m 
+-66.6667 -66.6667 l 
+</path> 
+<path stroke = "black"> 
+-100 -100 m 
+-66.6667 -66.6667 l 
+</path> 
+</page>
