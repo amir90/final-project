@@ -16,7 +16,9 @@ typedef CGAL::Surface_mesh<Point>                            Mesh;
 typedef Kernel::Segment_2									Segment;
 typedef boost::graph_traits<Mesh>::vertex_descriptor vertex_descriptor;
 typedef CGAL::Aff_transformation_2<Kernel> 						Transformation;
-#define 	CGAL_PI   3.14159265358979323846
+typedef std::list<Mesh::Vertex_index>  						Boundary;
+typedef std::list<Mesh::Vertex_index>::iterator  BoundaryIterator;
+		#define 	CGAL_PI   3.14159265358979323846
 
 
 Point getOffsetPoint (Point last_v, Point curr_v, Point next_v) {
@@ -31,14 +33,137 @@ Point getOffsetPoint (Point last_v, Point curr_v, Point next_v) {
 	Kernel::FT D = Kernel::FT((std::sqrt(CGAL::to_double(vec1.squared_length()))+std::sqrt(CGAL::to_double(vec2.squared_length())))/2);
 	Kernel::Vector_2 Theta;
 
-	 auto Angle = acos(vec1_norm*vec2_norm);
-	// std::cout << Angle << "\n";
+	Kernel::FT Angle;
+	Angle =  CGAL::left_turn(last_v,curr_v,next_v)? acos(vec1_norm*vec2_norm):2*CGAL_PI-acos(vec1_norm*vec2_norm);
+
 	Transformation rotate2(CGAL::ROTATION, std::sin(Angle/2), std::cos(Angle/2));
 
 	Theta = rotate2(vec2_norm);
 	auto new_v = curr_v + Theta*D;
 
 	return new_v;
+}
+
+BoundaryIterator getNext (BoundaryIterator begin,BoundaryIterator end,BoundaryIterator curr, int num) {
+	if (num>0) {
+		while (num>0) {
+			num--;
+			curr == std::next(end,-1)? curr=begin:std::next(curr,1);
+			}
+	} else if (num<0) {
+		while (num<0) {
+			num++;
+			curr == begin? curr=std::next(end,-1):std::next(curr,-11);
+		}
+	}
+	return curr;
+}
+
+void applySixNodeSplitter (Boundary boundary, Mesh & m) {
+
+	int numOfCollinearVertex=0;
+	int temp=0;
+	int maxNumOfConsecutiveCollinearVertex=0;
+	int numOfNormalVertices = 0;
+	auto splitterVertex = boundary.begin();
+	auto j=boundary.begin();
+	bool startAtSplitter=false;
+	for (int i=1; i!=2*boundary.size(); i++) {
+		auto next_vertex = getNext(boundary.begin(),boundary.end(),j,1);
+		auto last_vertex = getNext(boundary.begin(),boundary.end(),j,-1);
+
+		if (CGAL::collinear(m.point(*last_vertex),m.point(*j),m.point(*next_vertex))) {
+			if (j==boundary->begin()) {
+				startAtSplitter=true;
+			}
+			numOfCollinearVertex++;
+			temp++;
+			if (temp>maxNumOfConsecutiveCollinearVertex) {
+			splitterVertex = *j;
+			}
+			numOfNormalVertices=0;
+			if (j==--boundary->end())  { //If starting at middle of collinear vertex sequence
+				temp ++;
+				if (startAtSplitter) {
+				splitterVertex = boundary->begin();
+				}
+			}
+
+		} else {
+			if (temp>maxNumOfConsecutiveCollinearVertex) {
+				maxNumOfConsecutiveCollinearVertex=temp;
+				numOfNormalVertices++;
+			}
+			temp=0;
+		}
+	}
+
+	if (numOfCollinearVertex==0) {
+		m.add_face (*(std::next(splitterVertex,3)),*(std::next(splitterVertex,2)),*(std::next(splitterVertex,1)),*splitterVertex);
+		m.add_face (*splitterVertex,*(std::next(splitterVertex,5)),*(std::next(splitterVertex,4)),*(std::next(splitterVertex,3)));
+	}
+	if (numOfCollinearVertex==1) {
+		m.add_face (*getNext(splitterVertex,3),*getNext(splitterVertex,2),*getNext(splitterVertex,1),*splitterVertex);
+		m.add_face (*splitterVertex,*getNext(splitterVertex,5),*getNext(splitterVertex,4),*getNext(splitterVertex,3));
+	}
+	if (numOfCollinearVertex==2 && maxNumOfConsecutiveCollinearVertex==1) {
+		auto lastCollinearVertex = getNext(splitterVertex,-1*numOfNormalVertex);
+		auto originVertex = getNext(lastCollinearVertex,-1);
+		auto newVertex = m.add_vertex(originVertex + (m.point(*lastCollinearVertex)-m.point(*originVertex))+(m.point(*splitterVertex)-m.point(*originVertex)));
+		if (numOfNormalVertex==1) {
+			m.add_face (*splitterVertex,*originVertex,*lastCollinearVertex,newVertex);
+			auto v1 = getNext(splitterVertex,-2);
+			m.add_face(*v1,*getNext(v1,-1),*splitterVertex,newVertex);
+			m.add_face(*v1,newVertex,*lastCollinearVertex,*getNext(v1,1));
+		} else if (numOfnormalVertex==3) {
+			m.add_face (*splitterVertex,*originVertex,*lastCollinearVertex,newVertex);
+			auto v1 = getNext(splitterVertex,2);
+			m.add_face(*v1,*getNext(v1,-1),*splitterVertex,newVertex);
+			m.add_face(*v1,newVertex,*lastCollinearVertex,*getNext(v1,1));
+		} else {
+			m.add_face (*(std::next(splitterVertex,3)),*(std::next(splitterVertex,2)),*(std::next(splitterVertex,1)),*splitterVertex);
+			m.add_face (*splitterVertex,*(std::next(splitterVertex,5)),*(std::next(splitterVertex,4)),*(std::next(splitterVertex,3)));
+		}
+	}
+	if (numOfCollinearVertex==2 && maxNumOfConsecutiveCollinearVertex==2) {
+		auto lastCollinearVertex = getNext(splitterVertex,-1);
+		auto v1 = getNext(lastCollinearVertex,2);
+		auto newV1 = m.add_vertex(v1 + (m.point(*getNext(v1,1))-m.point(*v1))+(m.point(*getNext(v1,-1))-m.point(*v1)));
+		auto v2 = getNext(lastCollinearVertex,3);
+		auto newV2 = m.add_vertex(v2 + (m.point(*getNext(v2,1))-m.point(*v2))+(m.point(*getNext(v2,-1))-m.point(*v2)));
+		m.add_face (*splitterVertex, *lastCollinearVertex, newV2, newV1);
+		m.add_face (*getNext(splitterVertex,1),*splitterVertex,newV1,*v1);
+		m.add_face(*lastCollinearVertex,*getNext(lastCollinearVertex,-1),*v2,*newV2);
+		m.add_face (newV1,newV2,*v2,*v1);
+	}
+	if (numOfCollinearVertex==3 && maxNumOfConsecutiveCollinearVertex==3) {
+
+		auto newV1 = m.add_vertex(m.point(*getNext(splitterVertex,-2)))+(m.point(*getNext(splitterVertex,2)-m.point(*getNext(splitterVertex,-2))))*Kernel::FT(2/3);
+		auto newV2 = m.add_vertex(m.point(*getNext(splitterVertex,-1)))+(m.point(*getNext(splitterVertex,2)-m.point(*getNext(splitterVertex,-1))))*Kernel::FT(2/3);
+		auto newV3 = m.add_vertex(m.point(*getNext(splitterVertex,0)))+(m.point(*getNext(splitterVertex,2)-m.point(*getNext(splitterVertex,0))))*Kernel::FT(1/3);
+
+		//TODO: complete added faces (5 in total)
+		m.add_face(*splitterVertex,newV3,*getNext(splitterVertex,2),*getNext(splitterVertex,1));
+		m.add_face(*splitterVertex,newV3,*getNext(splitterVertex,2),*getNext(splitterVertex,1));
+		m.add_face(*splitterVertex,newV3,*getNext(splitterVertex,2),*getNext(splitterVertex,1));
+		m.add_face(*splitterVertex,newV3,*getNext(splitterVertex,2),*getNext(splitterVertex,1));
+		m.add_face(*splitterVertex,newV3,*getNext(splitterVertex,2),*getNext(splitterVertex,1));
+		m.add_face(*splitterVertex,newV3,*getNext(splitterVertex,2),*getNext(splitterVertex,1));
+
+
+	}
+	if (numOfCollinearVertex==3 && maxNumOfConsecutiveCollinearVertex==2) {
+		m.add_face (*getNext(splitterVertex,3),*getNext(splitterVertex,2),*getNext(splitterVertex,1),*splitterVertex);
+								m.add_face (*splitterVertex,*getNext(splitterVertex,5),*getNext(splitterVertex,4),*getNext(splitterVertex,3));
+
+	}
+	if (numOfCollinearVertex==3 && maxNumOfConsecutiveCollinearVertex==1) {
+		autoNewV = m.add_vertex(CGAL::ORIGIN+((m.point(*getNext(splitterVertex,1))-CGAL::ORIGIN)+(m.point(*getNext(splitterVertex,2))-CGAL::ORIGIN)+(m.point(*getNext(splitterVertex,4))-CGAL::ORIGIN))/3);
+					m.add_face(*splitterVertex,*getNext(splitterVertex,1),*getNext(splitterVertex,2),newV);
+					m.add_face(*getNext(splitterVertex,2),*getNext(splitterVertex,3),*getNext(splitterVertex,4),newV);
+					m.add_face(*getNext(splitterVertex,3),*getNext(splitterVertex,4),*getNext(splitterVertex,5),newV);
+
+	}
 }
 
 int main(int /* argc */, char* argv[])
@@ -150,104 +275,23 @@ int max_nodes=5; //how many nodes per edge
 while (!sm_boundaries.empty()) { //as long as you still have elements to fill in...
 //for (int s=1; s<100; s++) {
 
-	std::cout<< "Size: " << sm_boundaries.begin()->size() <<"\n" ;
-
-	//std::cout << s << " \n";
-
-	for (auto k=sm_boundaries.begin()->begin(); k!=sm_boundaries.begin()->end(); k++) {
-	//std::cout<<m.point(*k)<<" \n ";
-	}
 
 	std::list<Mesh::Vertex_index> new_sm_boundary; //used for managing boundary updates
 
 
 		if (sm_boundaries.begin()->size()==6 ){ //mesh using predefined templates
-			if (sm_boundaries.begin()->size()!=4 && sm_boundaries.begin()->size()!=6) {
-		//		std::cout << "size=5";
-			}
-
-			//implement six node splitters
-			// need to keep track of the number of 180 degree angles, and number of consecutive(!) 180 degree angles
-			int numOfCollinearVertex=0;
-			int temp=0;
-			int maxNumOfConsecutiveCollinearVertex=0;
-			int numOfNormalVertices = 0;
-			auto splitterVertex = sm_boundaries.begin()->begin();
-			bool collinearFlag=false;
-
-			for (auto j=sm_boundaries.begin()->begin(); j!=sm_boundaries.begin()->end(); j++) {
-				auto next_vertex = std::next(j,1);
-				auto last_vertex = std::next(j,-1);
-				if (CGAL::collinear(m.point(*last_vertex),m.point(*j),m.point(*next_vertex))) {
-
-					numOfCollinearVertex++;
-					temp++;
-					splitterVertex = *j;
-					numOfNormalVertices=0;
-					if (j==--sm_boundaries.begin()->end())  { //If starting at middle of collinear vertex sequence
-						temp ++;
-						splitterVertex = sm_boundaries.begin()->begin();
-					}
-
-				} else {
-					if (temp>maxNumOfConsecutiveCollinearVertex) {
-						maxNumOfConsecutiveCollinearVertex=temp;
-						numOfNormalVertices++;
-					}
-					temp=0;
-				}
-			}/*
-			if (sm_boundaries.begin()->size()==6) {
-				auto j=sm_boundaries.begin()->begin();
-				//m.add_face (*j,*(std::next(j,1)),*(std::next(j,2)),*(std::next(j,3)));
-				m.add_face (*(std::next(j,3)),*(std::next(j,2)),*(std::next(j,1)),*j);
-		//	m.add_face (*(std::next(j,3)),*(std::next(j,4)),*(std::next(j,5)),*j);
-				m.add_face (*j,*(std::next(j,5)),*(std::next(j,4)),*(std::next(j,3)));
-				std::cout << "here : " << m.point(*j) << " "<< m.point(*(std::next(j,1))) << " " << m.point(*std::next(j,2))  << " " <<  m.point(*std::next(j,3))  << " "<<  m.point(*std::next(j,4)) << " " <<  m.point(*std::next(j,5)) << "\n";
-			} */
-
-			auto j=sm_boundaries.begin()->begin();
-
-			if (numOfCollinearVertex==0) {
-				m.add_face (*(std::next(splitterVertex,3)),*(std::next(splitterVertex,2)),*(std::next(splitterVertex,1)),*splitterVertex);
-				m.add_face (*splitterVertex,*(std::next(splitterVertex,5)),*(std::next(splitterVertex,4)),*(std::next(splitterVertex,3)));
-			}
-			if (numOfCollinearVertex==1) {
-				m.add_face (*getNext(splitterVertex,3),*getNext(splitterVertex,2),*getNext(splitterVertex,1),*splitterVertex);
-				m.add_face (*splitterVertex,*getNext(splitterVertex,5),*getNext(splitterVertex,4),*getNext(splitterVertex,3));
-			}
-			if (numOfCollinearVertex==2 && maxNumOfConsecutiveCollinearVertex==1) {
-				if (numOfNormalVertex==1) {
-					m.add_face (*(std::next(splitterVertex,3)),*(std::next(splitterVertex,2)),*(std::next(splitterVertex,1)),*splitterVertex);
-					m.add_face (*splitterVertex,*(std::next(splitterVertex,5)),*(std::next(splitterVertex,4)),*(std::next(splitterVertex,3)));
-				} else if (numOfnormalVertex==3) {
-
-				} else {
-					m.add_face (*(std::next(splitterVertex,3)),*(std::next(splitterVertex,2)),*(std::next(splitterVertex,1)),*splitterVertex);
-					m.add_face (*splitterVertex,*(std::next(splitterVertex,5)),*(std::next(splitterVertex,4)),*(std::next(splitterVertex,3)));
-				}
-			}
-			if (numOfCollinearVertex==2 && maxNumOfConsecutiveCollinearVertex==2) {
-
-			}
-			if (numOfCollinearVertex==3 && maxNumOfConsecutiveCollinearVertex==3) {
-
-			}
-			if (numOfCollinearVertex==3 && maxNumOfConsecutiveCollinearVertex==2) {
-
-			}
-			if (numOfCollinearVertex==3 && maxNumOfConsecutiveCollinearVertex==1) {
-
-			}
-
+			applySixNodeSplitter(sm_boundaries.begin(),m);
 			sm_boundaries.pop_front();
 			continue;
 		}
 
-		//TODO: for each node on the new boundary, compare with every other node on the boundary to find split lines
+		if (sm_boundaries.begin()->size()==4) { //make element
+
+			auto j = sm_boundaries.begin()->end();
+			m.add_face (*std::next(j,-1),*std::next(j,-2),*std::next(j,-3),*std::next(j,-4));
+		}
 
 
-	//TODO:: add condition that valid pairs are only those with a [0,-1] scalar product between their normals.
 		std::cout << "Check if elements need to be split\n";
 
 		bool nullFlag = false;
@@ -304,6 +348,7 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 
 					auto norm_vec_j = vec_j/std::sqrt(CGAL::to_double(vec_j.squared_length()));
 
+					//make sure elements are on collision path - Criterion: angle between normal vectors between 90 and 180 degrees (not given in paper)
 					if ((norm_vec_j*norm_vec_i>0)) {
 						break;
 					}
@@ -367,31 +412,40 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 				}
 		}
 
-		//std::cout << nullFlag << " "  << (D1+D2)/2+(D3+D4)/2 << " " << minDistance << "\n";
-	//	std::cout << m.point(*v1) << " "  << m.point(*v2)  << "\n";
-		if ((nullFlag!=false) && ((1.3*(D1+D2)/2+(D3+D4)/2)>=minDistance)) {
+		//TODO: check if number of nodes in sub-boundaries is even or odd
+
+		if ((nullFlag!=false) && ((1.3*((D1+D2)/2+(D3+D4)/2))>=minDistance)) {
 
 		//check if minDistance acquired, justifies splitting the boundary, as described in paper
 
 			std::cout<<"splitting boundary\n";
 
 		std::list<Mesh::Vertex_index> new_sm_boundary_1, new_sm_boundary_2;
-			//start from i, move counterclockwise until you see j
+			//start from i, move counterclockwise until encounter with j
 
 		auto k=v1;
 		auto midSplitNode = m.point(*v1)+Kernel::Vector_2(m.point(*v2)-m.point(*v1))/2;
 		auto midSplitNode_index = m.add_vertex(midSplitNode);
 
+		int counter=0;
+
 		new_sm_boundary_1.push_back(*k);
+		counter++;
 		while (k!=v2) {
 			k++;
+			counter++;
 			if (k==sm_boundaries.begin()->end()) {
 					k=sm_boundaries.begin()->begin();
 			}
 			new_sm_boundary_1.push_back(*k);
 
 		} //ends with k=v2
+
+		if (counter % 2 ==1) {
 		new_sm_boundary_1.push_back(midSplitNode_index);
+		} else {
+			m.remove_vertex(midSplitNode_index);
+		}
 
 		new_sm_boundary_2.push_back(*k);
 		while (k!=v1) {
@@ -401,7 +455,10 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 			}
 			new_sm_boundary_2.push_back(*k);
 		} //ends with k=v1
+
+		if (counter %2 ==1) {
 		new_sm_boundary_2.push_back(midSplitNode_index);
+		}
 
 		sm_boundary = new_sm_boundary_1;
 		sm_boundaries.push_back(sm_boundary);
@@ -413,11 +470,9 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 		}
 
 
-
+		// if boundary does not need to be split - offset elements
 
 	std::cout<<"offsetting element row\n";
-
-	//CGAL::Circulator_from_iterator<std::list<Mesh::Vertex_index>::iterator> circ(sm_boundaries.begin()->begin(),sm_boundaries.begin()->end());
 
 	//first node
 
@@ -427,23 +482,7 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 
 	auto next_v =m.point( *(std::next(sm_boundaries.begin()->begin(),1)));
 
-	Kernel::Vector_2 vec1 = Kernel::Vector_2(curr_v,last_v);
-
-	Kernel::Vector_2 vec2 = Kernel::Vector_2(curr_v,next_v);
-
-	auto vec1_norm = vec1/Kernel::FT(std::sqrt(CGAL::to_double(vec1.squared_length())));
-
-	auto vec2_norm = vec2/Kernel::FT(std::sqrt(CGAL::to_double(vec2.squared_length())));
-
-	Kernel::FT D = Kernel::FT((std::sqrt(CGAL::to_double(vec1.squared_length()))+std::sqrt(CGAL::to_double(vec2.squared_length())))/2);
-	Kernel::Vector_2 Theta;
-
-	 auto Angle = acos(vec1_norm*vec2_norm);
-	// std::cout << Angle << "\n";
-	Transformation rotate2(CGAL::ROTATION, std::sin(Angle/2), std::cos(Angle/2));
-
-	Theta = rotate2(vec2_norm);
-	auto new_v = curr_v + Theta*D;
+	auto new_v = getOffsetPoint(last_v,curr_v,next_v);
 
 	auto new_index = m.add_vertex(new_v);
 
@@ -451,7 +490,11 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 
 	auto old_index = new_index;
 
+	auto mid_node1_index = new_index;
+
 	auto firstOffsetNodeIndex= new_index;
+
+	bool midVertexFlag=false;
 
 	//loop over other nodes
 
@@ -472,30 +515,21 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 
 		next_v = m.point(*j);
 
-		vec1 = Kernel::Vector_2(curr_v,last_v);
-
-		vec2 = Kernel::Vector_2(curr_v,next_v);
-
-		 vec1_norm = vec1/Kernel::FT(std::sqrt(CGAL::to_double(vec1.squared_length())));
-
-		 vec2_norm = vec2/Kernel::FT(std::sqrt(CGAL::to_double(vec2.squared_length())));
-
-
-		  D = Kernel::FT((std::sqrt(CGAL::to_double(vec1.squared_length()))+std::sqrt(CGAL::to_double(vec2.squared_length())))/2);
-
-		   Angle = acos(vec1_norm*vec2_norm);
-
-		  Transformation rotate2(CGAL::ROTATION, std::sin(Angle/2), std::cos(Angle/2));
-
-		 Theta = rotate2(vec2_norm);
-
-
-		new_v = curr_v + Theta*D;
-
+		new_v = getOffsetPoint(last_v,curr_v,next_v);
 
 		auto Dij = CGAL::squared_distance(new_v,m.point(old_index));
 
 		auto Di = CGAL::squared_distance(new_v,m.point(*i));
+
+		if (midVertexFlag==true) {
+
+			auto mid_node2 =  m.point(old_index)+(new_v-m.point(old_index))/2;
+			auto  mid_node2_index = m.add_vertex(mid_node2);
+			m.add_face(mid_node1_index,old_index,mid_node2_index,std::next(i,-1));
+			old_index = mid_node2_index;
+			midVertexFlag==false;
+
+		}
 
 		if ((Dij<Kernel::FT(0.517*0.517)* Di)) { //check if nodes need to be eliminated
 			m.add_face(*std::next(i,-1),old_index,*j,*i);
@@ -503,26 +537,19 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 			if (i!=std::next((sm_boundaries.begin()->end()),-3)) {
 			i++;
 			}
-	/*	} else if (Dij>Kernel::FT(1.453*1.453)* Di){ //check if middle node needs to be added
-		//still needs some work..unclear about implementation (can create triangular element...)
-			auto mid_node = m.point(old_index)+(m.point(old_index)-new_v)/2;
-			auto  mid_node_index = m.add_vertex(mid_node);
-			m.add_face(*std::next(i,-1),old_index,mid_node_index,*i);
-			i--;
-*/
-		} else { //node is fine*/
+		} else if (Dij>Kernel::FT(1.453*1.453)* Di && !midVertexFlag){ //check if middle node needs to be added
+			  auto mid_node1 = m.point(old_index)+(new_v-m.point(old_index))/2;
+			  mid_node1_index = m.add_vertex(mid_node1);
+			//add new face
+			m.add_face(*old_index,*mid_node1_index,*i,std::next(i,-1));
+			midVertexFlag=true;
+			old_index = m.add_vertex(new_v);
 
-			if (i==--sm_boundaries.begin()->end()) {
-		//		std::cout << "Test1 \n" << last_v << " "<< curr_v << " " <<next_v << " \n";
-		//		std::cout << "Test2 \n" << vec1_norm << " "<< vec2_norm << " " << " \n";
-		//		std::cout << "Test3 \n" << std::acos(vec1_norm*vec2_norm)  << " \n";
-		//		std::cout << "Test4 \n" << Angle  << " \n";
-			}
+		} else { //node is fine*/
 
 		new_index = m.add_vertex(new_v);
 
 		new_sm_boundary.push_back(new_index);
-
 
 		m.add_face(*i,*std::next(i,-1),old_index,new_index);
 
@@ -535,15 +562,13 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 	 auto secondToLastv = std::next(sm_boundaries.begin()->end(),-2);
 	 auto Lastv = std::next(sm_boundaries.begin()->end(),-1);
 	 auto Firstv = sm_boundaries.begin()->begin();
-//	 std::cout << "Test4 " << m.point(*Lastv)  <<" " << m.point(*Firstv) <<" " <<m.point(*secondToLastv) <<" \n";
       m.add_face(*secondToLastv, *thirdToLastv, old_index, firstOffsetNodeIndex);
       m.add_face(*secondToLastv,firstOffsetNodeIndex,*Firstv,*Lastv);
 
-	//TODO: perform local smoothing
 
-	//for each new node in the new boundary...
 
-	//assumption that boundary nodes are connected to exactly 3 other nodes (not always true..)
+      //perform local smoothing
+
 	std::cout<<"performing local smoothing\n";
 	for (auto i=new_sm_boundary.begin(); i!=new_sm_boundary.end(); i++) {
 
@@ -571,8 +596,7 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 	    do {
 	      if ((*vbegin!=*last_vertex) && (*vbegin!=*next_vertex) && (*vbegin!=*i)) {
 	    	  prev_v = *vbegin;
-	   // 	  std::cout << m.point(*vbegin) << "\n";
-	    	  break;
+	     	  break;
 	      }
 	      vbegin++;
 	    } while(vbegin != done);
@@ -584,13 +608,9 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 
 	   m.point(*i) = m.point(prev_v) + V3;
 	   if (m.point(*i)!=m.point(*i)) {
-	  // std::cout << m.point(*last_vertex) << " "<<m.point(prev_v) << " " << m.point(*next_vertex) << "\n";
-		   do {
-		  	  //  	  std::cout << m.point(*vbegin) <<" ";
-
+			   do {
 		  	      vbegin1++;
 		  	    } while(vbegin1 != done);
-		//   std::cout << "\n";
 	   }
 		}
 
@@ -601,13 +621,12 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 
 	sm_boundaries.pop_front();
 
-
-
-
 }
 
 
 //perform global smoothing on mesh
+
+//TODO: perform global smoothing a number of times (six supposed to be enough)
 
 std::cout<<"performing global smoothing\n";
 
@@ -631,7 +650,115 @@ for (auto i=m.vertices_begin(); i!=m.vertices_end(); i++) {
 //go over all elements
 	for (auto i=m.faces_begin(); i!=m.faces_end(); i++) {
 		//Case 1: check if element shares two of its nodes with neighbor
-		//Case 2: check for two nodes on element which are on different neigbors!
+		auto e = m.halfedge(*i);
+		auto s1 = e;
+		auto s2 = m.next(s1);
+		while (s2!=e) {
+			if (m.face(m.opposite(s1)) == m.face(m.opposite(e))) {
+				//Merge elements (delete both and create new element)
+				//Mark vertex as removed?
+
+				m.remove_vertex(m.vertex(s,1));
+			}
+			s1=m.next(s1);
+			s2 = m.next(s1);
+		}
+		//Case 2: check antipodal pair of two nodes on element.
+
+		auto vbegin = ((m.vertices_around_face(m.halfedge(*i)))).begin();
+
+
+
+		auto v1=*vbegin++;
+		auto v2 = *vbegin++;
+		auto v3 = *vbegin++;
+		auto v4 = *vbegin;
+
+		if (m.degree(v1)==3 && m.degree(v3)==3) {
+			auto newVertex = m.point(v1) + (m.point(v3)-m.point(v1));
+			auto newIndex = m.add_vertex(newVertex);
+			m.set_target(m.halfedge(v1),newIndex);
+			m.set_target(m.halfedge(v3),newIndex);
+			m.remove_face(*i);
+		}
+
+		if (m.degree(v2)==3 && m.degree(v4)==3) {
+			auto newVertex = m.point(v2) + (m.point(v4)-m.point(v4));
+			auto newIndex = m.add_vertex(newVertex);
+			m.set_target(m.halfedge(v2),newIndex);
+			m.set_target(m.halfedge(v4),newIndex);
+			m.remove_face(*i);
+		}
+
+		//Case 3: for every vertex check if degree is 3 *and* it is not a border vertex
+
+		if (m.degree(v1)==3 && !m.is_border(v1,true)) {
+
+			//get six nodes that form the boundary
+
+			auto begin = CGAL::halfedges_around_source(v1,m);
+		}
+		if (m.degree(v2)==3  && !m.is_border(v2,true)) {
+
+			auto start = CGAL::halfedges_around_source_iterator<Mesh>(v2,m);
+
+			}
+		if (m.degree(v3)==3  && !m.is_border(v3,true)) {
+
+			auto start = CGAL::halfedges_around_source_iterator<Mesh>(v3,m);
+
+			}
+		if (m.degree(v4)==3  && !m.is_border(v4,true)) {
+
+			auto start = CGAL::halfedges_around_source_iterator<Mesh>(v4,m);
+
+			}
+
+
+		Boundary boundary;
+
+		for (auto j = start.begin(); j!=start.end(); j++) {
+
+
+		boundary.pop_back(m.target(*j));
+		boundary.pop_back(m.target(m.next(*j)));
+
+		}
+
+
+		applySixNodeSplitter (boundary,m);
+
+
+		//case 4: for every edge of face, check if source and target both have degree 3
+
+		 e = m.halfedge(*i);
+		 CGAL::halfedges_around_face<Mesh> ebegin(e,m), done(ebegin);
+		do {
+			if (m.degree((m.source(ebegin)))==3 && m.degree(m.target(ebegin))==3) {
+				//go to previous edge
+				//go to opposite edge
+				//add target vertex -1
+				//go to next edge
+				//add target vertex -2
+				//go to next edge
+				//add target vertex -3
+				//go to next edge
+				//go to opposite edge
+				//go to next edge
+				//add target vertex - 4
+				//go to next edge
+				//got to opposite edge
+				//go to next edge
+				//add target vertex -5
+				//got to next edge
+				//add target vertex - 6
+
+				break;
+			}
+			ebegin++;
+		} while (ebegin!=done);
+
+
 	}
 
 
