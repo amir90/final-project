@@ -388,6 +388,7 @@ int main(int /* argc */, char* argv[])
 
 	b1.controlPoints.clear();
 	b1.controlPoints.push_back(Point(100,-100));
+	b1.controlPoints.push_back(Point(150, 50));
 	b1.controlPoints.push_back(Point(100,100));
 
 	boundary.push_back(b1);
@@ -412,7 +413,7 @@ int main(int /* argc */, char* argv[])
 
 	// begin meshing - populate boundaries with nodes
 
-int max_nodes=10; //how many nodes per edge
+int max_nodes=11; //how many nodes per edge
 
 	for (auto i = boundaries.begin(); i!=boundaries.end(); i++) { //for all boundaries
 		for (auto j = i->begin(); j!=i->end(); j++) { //for all bezier curve in a boundary
@@ -457,8 +458,8 @@ int max_nodes=10; //how many nodes per edge
 
 	sm_boundaries.push_back(sm_boundary);
 
-while (!sm_boundaries.empty()) { //as long as you still have elements to fill in...
-//for (int s=1; s<14; s++) {
+while (!sm_boundaries.empty()) { //as long a14s you still have elements to fill in...
+//for (int s=1; s<33; s++) {
 
 //	if (s==5) {
 //		std::cout<< "left: " << sm_boundaries.size()<< " size: " << sm_boundaries.begin()->size()<<"\n";
@@ -540,7 +541,7 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 					auto norm_vec_j = vec_j/std::sqrt(CGAL::to_double(vec_j.squared_length()));
 
 					//make sure elements are on collision path - Criterion: angle between normal vectors between 90 and 180 degrees (not given in paper)
-					if ((norm_vec_j*norm_vec_i>-0.5)) {
+					if ((norm_vec_j*norm_vec_i>-0.8)) {
 						break;
 					}
 
@@ -603,7 +604,7 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 				}
 		}
 
-		if ((nullFlag!=false) && ((1*((D1+D2)/2+(D3+D4)/2))>=minDistance)) {
+		if ((nullFlag!=false) && ((1.3*((D1+D2)/2+(D3+D4)/2))>=minDistance)) {
 
 		//check if minDistance acquired, justifies splitting the boundary, as described in paper
 
@@ -707,18 +708,11 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 
 		auto Di = CGAL::squared_distance(new_v,m.point(*i));
 
-		if (midVertexFlag==true) {
+//		if (midVertexFlag==true) {
 
-			auto mid_node2 =  m.point(old_index)+(new_v-m.point(old_index))/2;
-			auto  mid_node2_index = m.add_vertex(mid_node2);
-			m.add_face(mid_node1_index,old_index,mid_node2_index,*(std::next(i,-1)));
-			old_index = mid_node2_index;
-			midVertexFlag=false;
-
-		}
+	//	}
 
 		auto Dij = CGAL::squared_distance(new_v,m.point(old_index));
-
 
 		if ((Dij<Kernel::FT(0.517*0.517)* Di)) { //check if nodes need to be eliminated
 			std::cout << "need to eliminate node!\n";
@@ -726,16 +720,27 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 			// go over next node
 			if (i!=std::next((sm_boundaries.begin()->end()),-3)) {
 			i++;
+			midVertexFlag=false;
 			}
-		} else if (Dij>Kernel::FT(1.453*1.453)* Di && !midVertexFlag){ //check if middle node needs to be added
+		} else if (Dij>Kernel::FT(1.453*1.453)*Di && (1!=1)){ //check if middle node needs to be added
 		std::cout << "need to add middle node!\n";
+		if (!midVertexFlag) {
 			auto mid_node1 = m.point(old_index)+(new_v-m.point(old_index))/2;
 			  mid_node1_index = m.add_vertex(mid_node1);
 			//add new face
 			m.add_face(old_index,mid_node1_index,*i,*(std::next(i,-1)));
 			midVertexFlag=true;
-			old_index = m.add_vertex(new_v);
-
+			std::cout<<"mid vertex flag = " << midVertexFlag << "\n";
+		//	old_index = m.add_vertex(new_v);
+			old_index =  mid_node1_index;
+		} else { //midVertexFlag=true
+			auto mid_node2 =  m.point(old_index)+(new_v-m.point(old_index))/2;
+			auto  mid_node2_index = m.add_vertex(mid_node2);
+			m.add_face(mid_node2_index,*i,*(std::next(i,-1)),mid_node1_index);
+			old_index = mid_node2_index;
+			midVertexFlag=false;
+		}
+			std::cout<<"Done adding middle point: "<<m.point(mid_node1_index)<<"\n";
 		} else { //node is fine*/
 
 		new_index = m.add_vertex(new_v);
@@ -745,10 +750,20 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 		m.add_face(*i,*std::next(i,-1),old_index,new_index);
 
 		old_index = new_index;
+		if (midVertexFlag) {
+			std::cout << "here is problem: " <<m.point(new_index)<<"\n";
+		}
+		midVertexFlag=false;
 
 		}
 
 	}
+
+	//stiching to close offset element row
+
+		if (midVertexFlag=true) {
+			std::cout <<"exited with mid vertex flag \n";
+		}
 		auto thirdToLastv = std::next(sm_boundaries.begin()->end(),-3);
 	 auto secondToLastv = std::next(sm_boundaries.begin()->end(),-2);
 	 auto Lastv = std::next(sm_boundaries.begin()->end(),-1);
@@ -820,7 +835,7 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 //perform global smoothing on mesh
 
 
-for (auto t=1; t<=6; t++){
+for (auto t=1; t<=6 ; t++){
 
 std::cout<<"performing global smoothing\n";
 
