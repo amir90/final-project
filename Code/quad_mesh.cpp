@@ -5,9 +5,8 @@
 #include <CGAL/boost/graph/dijkstra_shortest_paths.h>
 #include <boost/graph/prim_minimum_spanning_tree.hpp>
 #include <ipelet.h>
+#include <boost/tokenizer.hpp>
 #include <boost/foreach.hpp>
-#include <iostream>
-#include <fstream>
 #include <boost/math/special_functions/binomial.hpp>
 #include <math.h>
 #include <CGAL/squared_distance_2.h>
@@ -435,34 +434,29 @@ bool isAngleBad (Point last_v, Point curr_v, Point next_v) {
 
 }
 
-int main(int /* argc */, char* argv[])
+int main(int  argc , char* argv[])
 {
 
+	  // parse input
+	  if (argc != 2)
+	  {
+	      std::cerr << "Usage: " << argv[0] << " filename " << std::endl;
+	      std::exit(0);
+	  }
 
-	auto Points = {std::pair<double,double>(-1,-1),std::pair<double,double>(1,1)}; //testing nurbs - vector of points
 
-	auto weights = {1.0,1.0};
+//	std::vector<std::pair<double,double>> Points {std::pair<double,double>(-4,-4),std::pair<double,double>(-2,4),std::pair<double,double>(2,-4),std::pair<double,double>(4,4)}; //testing nurbs - vector of points
 
-	auto Knots = {0.0,1.0};
+//	std::vector<double> weights {1,1,1,1};//{1.0,1.0};
 
-	auto Knotsmult = {1,1};
+//	std::vector<double> Knots {0,0,0,0,1,1,1,1};//{0.0,0.0,1.0,1.0};
 
-	auto j = getPointinNurbsCurve(0,1,Points,Knots,Knotsmult,weights);
+//	auto j = getPointinNurbsCurve(0.5,3,Points,Knots,weights);
 
-	std::cout<<j.first<<","<<j.second<<"\n";
+//	std::cout<<Points[0].first<<" , "<<Points[0].second<<" , "<<j.first<<","<<j.second<<"\n";
 
 
 	Transformation rotate(CGAL::ROTATION, std::sin(CGAL_PI/2), std::cos(CGAL_PI/2));
-
-	//step 1: import an parasolid
-
-	//step 2: find the boundary, describe it with a countinous curve
-
-	// currently, not implemented
-
-	//step 3:  create nodes on curve (how to best space out the nodes? - paper by talbert)
-
-	//currently, use stub. rectangle with rectangular hole. specify bezier curve with control points
 
 
 	struct bezier_curve
@@ -470,10 +464,75 @@ int main(int /* argc */, char* argv[])
 		std::list<Point> controlPoints;
 	};
 
+	struct NurbsCurve {
+		std::vector<std::pair<double,double>> controlPoints;
+		std::vector<double> weights;
+		std::vector<double> knots;
+		int degree;
+		int numofNodes;
+		bool connectorFlag=false;
+		bool completeConnector=false;;
+	};
 
-	std::list<bezier_curve> boundary;
+	std::list<NurbsCurve> boundary; //list of bezier curve
 
-	std::list<std::list<bezier_curve>> boundaries; //list which holds all the boundaries
+	std::list<std::list<NurbsCurve>> boundaries; //list which holds all the boundaries
+
+	//filename is in is given in as argv[0]
+
+	 std::ifstream boundaryFile;
+	 std::string line;
+	  boundaryFile.open (argv[1]);
+	  boost::char_separator<char> sep(" ");
+	  if (boundaryFile.is_open())
+	    {
+	      while (std::getline(boundaryFile,line) )
+	      {
+	    	  NurbsCurve temp;
+	    	  if (line=="Connector") {
+	    		  temp.connectorFlag=true;
+	    	  }
+	    	  if (line=="End") {
+	    		  temp.completeConnector=true;
+	    	  }
+	    	  	  std::getline(boundaryFile,line);
+	    		  boost::tokenizer<boost::char_separator<char> > Pointtokens(line, sep);
+	    		  auto i=Pointtokens.begin();
+	    		  while (i!=Pointtokens.end()) {
+	    			  temp.controlPoints.push_back(std::pair<double,double>(std::stod(*i++),std::stod(*i++)));
+	    		  }
+	    		  std::getline(boundaryFile,line);
+	    		  boost::tokenizer<boost::char_separator<char> > Weighttokens(line, sep);
+	    		  i=Weighttokens.begin();
+	    		  while (i!=Weighttokens.end()) {
+	    			  temp.weights.push_back(std::stod(*i++));
+	    		  }
+	    		  std::getline(boundaryFile,line);
+	    		  boost::tokenizer<boost::char_separator<char> > Knottokens(line, sep);
+	    		  i=Knottokens.begin();
+	    		  while (i!=Knottokens.end()) {
+	    			  temp.knots.push_back(std::stod(*i++));
+	    		  }
+	    		  std::getline(boundaryFile,line);
+	    		  temp.numofNodes = std::stod(line);
+
+	    		  temp.degree = temp.knots.size()-temp.controlPoints.size()-1;
+	    		  boundary.push_back(temp);
+
+	      }
+	      boundaryFile.close();
+	    } else {
+	    	std::cout<<"Error opening file!";
+	    	exit(0);
+	    }
+
+	  boundaries.push_back(boundary);
+
+
+
+	//std::list<bezier_curve> boundary;
+
+//	std::list<std::list<bezier_curve>> boundaries; //list which holds all the boundaries
 
 	// ... input boundaries .... currently manual
 
@@ -481,6 +540,7 @@ int main(int /* argc */, char* argv[])
 	bezier_curve b1;
 
 /*
+	//Surface
 
 	b1.controlPoints.push_back(Point(-100,-100));
 	b1.controlPoints.push_back(Point(50, -200));
@@ -514,7 +574,9 @@ int main(int /* argc */, char* argv[])
 	*/
 
 
+/*
 
+ 	 //Surface with hole
 
 	b1.controlPoints.push_back(Point(-100,-100));
 	b1.controlPoints.push_back(Point(100,-100));
@@ -603,11 +665,12 @@ int main(int /* argc */, char* argv[])
 	boundaries.push_back(boundary);
 
 	boundary.clear();
+	*/
 
 	Mesh m;
 
 	// begin meshing - populate boundaries with nodes
-
+/*
 int max_nodes=5; //how many nodes per edge
 int temp_it=1;
 int vertex_counter_untill_connector=0;
@@ -644,8 +707,43 @@ std::list<Mesh::Vertex_index> connector;
 		std::cout<<"test: "<<temp_it<<"\n";
 		temp_it++;
 	}
+*/
 
-	std::cout<<"test2: "<<vertex_counter_untill_connector<<"\n";
+
+
+	std::list<std::list<Mesh::Vertex_index>> connectorList;
+	std::list<int> locationsToInsert;
+	int counter=0;
+		for (auto i = boundaries.begin(); i!=boundaries.end(); i++) { //for all boundaries
+			Mesh::Vertex_index ind;
+			for (auto j = i->begin(); j!=i->end(); j++) { //for all Nurbs curve in a boundary
+				std::list<Mesh::Vertex_index> connector;
+			int n = j->controlPoints.size()-1;
+				for (int t=1; t<=j->numofNodes; t++) {
+					double seed=(double)t/(j->numofNodes);
+					auto vert = getPointinNurbsCurve(seed,j->degree,j->controlPoints,j->knots,j->weights);
+					auto x=vert.first*4;
+					auto y=vert.second*4;
+				//	std::cout<<"point "<<Point(x,y)<<"\n";
+						if (j->connectorFlag) {
+							connector.push_front(ind);
+						}
+					ind = m.add_vertex(Point(x,y));
+					counter++;
+				}
+				if (j->connectorFlag) {
+					connectorList.push_back(connector);
+				}
+				if (j->completeConnector) {
+					locationsToInsert.push_back(counter);
+				}
+			}
+		}
+
+
+
+
+	//std::cout<<"test2: "<<vertex_counter_untill_connector<<"\n";
 //	auto st = m.vertices_begin();
 //	auto fi = m.vertices_end();
 
@@ -658,16 +756,20 @@ std::list<Mesh::Vertex_index> connector;
 	std::list<Mesh::Vertex_index> sm_boundary; //populate boundary list with vertex index
 
 	std::list<Mesh::Vertex_index> new_sm_boundary; //used for managing boundary updates
-int counter=0;
+
+	counter=0;
+
 	for (auto i = m.vertices_begin(); i!=m.vertices_end(); i++) {
-		if (counter==vertex_counter_untill_connector) {
-			connector.reverse();
-			for (auto s=++connector.begin(); s!=connector.end(); s++) {
+		if (!locationsToInsert.empty() && counter==locationsToInsert.front()) {
+			for (auto s=++connectorList.begin()->begin(); s!=connectorList.begin()->end(); s++) {
 				sm_boundary.push_back(*s);
 			}
+
+			locationsToInsert.pop_front();
+			connectorList.pop_front();
 		}
 		sm_boundary.push_back(*i); //getting correct vertex handle!
-		counter++;
+	//	counter++;
 	}
 
 	for (auto i=sm_boundary.begin(); i!=sm_boundary.end(); i++) {
@@ -678,7 +780,7 @@ int counter=0;
 	sm_boundaries.push_back(sm_boundary);
 
 while (!sm_boundaries.empty()) { //as long as you still have elements to fill in...
-//	for (auto s=1; s<1; s++) {
+	//for (auto s=1; s<15; s++) {
 
 
 	std::list<Mesh::Vertex_index> new_sm_boundary; //used for managing boundary updates

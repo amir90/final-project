@@ -3,8 +3,6 @@
 struct NurbsCurve {
 	std::vector<std::pair<double,double>> controlPoints;
 	std::vector<double> knots;
-	std::vector<int> knotMultiplicity;
-	bool sense;
 };
 
 typedef std::list<NurbsCurve> NurbsBoundary;
@@ -16,37 +14,58 @@ void  Nurbs_Boundaries_getNurbsData (std::string filename) {
 }
 
 double g(double u,double i,std::vector<double> knots,int n) {
-	std::cout<<"g is: "<< (knots[i+n]-u)/(knots[i+n]-knots[i])<<"\n";
+	if (knots[i+n]!=knots[i]) {
+	//	std::cout<<"g is: "<< (knots[i+n]-u)/(knots[i+n]-knots[i])<<"\n";
 	return (knots[i+n]-u)/(knots[i+n]-knots[i]);
+	} else {
+	//	std::cout<<"g is: 0"<<"\n";
+		return 0;
+	}
 
 }
 
 double f(double u,double i,std::vector<double> knots, int n) {
-	std::cout<<"f is: "<< (u-knots[i])/(knots[i+n]-knots[i])<<"\n";
+	// u - position on curve to evaluate
+	// i - knot number
+	// knots - knot vector
+	// n - degree
+	//degree
+
+	if (knots[i+n]!=knots[i]) {
+	//std::cout<<"f is: "<< (u-knots[i])/(knots[i+n]-knots[i])<<"\n";
 	return (u-knots[i])/(knots[i+n]-knots[i]);
+	} else {
+	//	std::cout<<"f is: 0"<<"\n";
+		return 0;
+	}
 
 }
 
-double N(double u,int i,std::pair<double,double> controlPoint, int n, const std::vector<double> knots) {
-
+double N(double u,int i, int n, const std::vector<double> knots) {
+	// u - position on curve to evaluate
+	// i - current knot
+	// n - degree
 	if (n==0) {
-
-		if (i<=u && u<=i+1) {
+		if ((knots[i]<=u && u<=knots[i+1])) {
+		//	std::cout<<"here: "<<i<<" , "<<knots[i]<<" , "<<u<<" , "<<knots[i+1]<<" returned 1 \n";
 			return 1;
 		} else {
+		//	std::cout<<"here: "<<i<<" , "<<knots[i]<<" , "<<u<<" , "<<knots[i+1]<<" returned 0 \n";
 			return 0;
 		}
 
 	} else {
-	return (f(u,i,knots,n)*N(u,i,controlPoint,n-1,knots)+g(u,i,knots,n)*N(u,i-1,controlPoint,n-1,knots));
+
+			auto test =  (f(u,i,knots,n)*N(u,i,n-1,knots)+g(u,i+1,knots,n)*N(u,i+1,n-1,knots));
+		//	std::cout<<"what i am actually returning is: "<<test<<"\n";
+			return test;
 
 	}
 
 }
 
 
-
-std::pair<double,double> getPointinNurbsCurve (double u,int n, const std::vector<std::pair<double,double>> controlPoints, const std::vector<double> knots, const std::vector<int> KnotMultiplicity,std::vector<double> weights) {
+std::pair<double,double> getPointinNurbsCurve (double u,int n, const std::vector<std::pair<double,double>> controlPoints, const std::vector<double> knots,std::vector<double> weights) {
 
 	double denominator = 0;
 	std::pair<double,double> nominator;
@@ -55,13 +74,17 @@ std::pair<double,double> getPointinNurbsCurve (double u,int n, const std::vector
 
 	for (int j=0; j<=controlPoints.size()-1; j++) {
 
-			denominator += N(u,j,controlPoints[j], n,knots)*weights[j];
-			std::cout<<"j is: "<<j<<" denom is: "<<denominator<<"\n";
-			nominator.first += denominator*controlPoints[j].first;
-			nominator.second += denominator*controlPoints[j].second;
+			auto curr_value = N(u,j, n,knots)*weights[j];
+			denominator += curr_value;
+		//	std::cout<<"j is: "<<j<<" denom is: "<<denominator<<" , "<<controlPoints[j].first<<"\n";
+			nominator.first += curr_value*controlPoints[j].first;
+			nominator.second +=  curr_value*controlPoints[j].second;
 
 
 }
+
+	nominator.first=nominator.first/denominator;
+	nominator.second=nominator.second/denominator;
 
 	return nominator;
 
