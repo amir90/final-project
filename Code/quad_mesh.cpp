@@ -23,7 +23,6 @@ typedef std::list<Mesh::Vertex_index>::iterator  BoundaryIterator;
 #define	Crit1_lower 0.785398 //in radians
 #define Crit1_higher 2.35619 //in radians
 #define Min_Collision_Value 0//cos of angle in radians
-#define Relaxation_Factor 1
 
 Point getOffsetPoint (Point last_v, Point curr_v, Point next_v) {
 	Kernel::Vector_2 vec1 = Kernel::Vector_2(curr_v,last_v);
@@ -421,11 +420,14 @@ int main(int  argc , char* argv[])
 {
 
 	  // parse input
-	  if (argc != 2)
+	  if (argc != 3)
 	  {
-	      std::cerr << "Usage: " << argv[0] << " filename " << std::endl;
+	      std::cerr << "Usage: " << argv[0] << " [filename] [Relaxation Factor]" << std::endl;
+
 	      std::exit(0);
 	  }
+
+	double Relaxation_Factor = std::stod(argv[2]);
 
 	Transformation rotate(CGAL::ROTATION, std::sin(CGAL_PI/2), std::cos(CGAL_PI/2));
 
@@ -549,6 +551,13 @@ int main(int  argc , char* argv[])
 
 	std::list<Mesh::Vertex_index> new_sm_boundary; //used for managing boundary updates
 
+
+	if (m.num_vertices() %2 != 0) {
+		std::cout<<"odd number of vertices on boundary - can not quad mesh!";
+		exit;
+	}
+
+
 	counter=0;
 
 	for (auto i = m.vertices_begin(); i!=m.vertices_end(); i++) {
@@ -572,19 +581,16 @@ int main(int  argc , char* argv[])
 
 	sm_boundaries.push_back(sm_boundary);
 
+
 while (!sm_boundaries.empty()) { //as long as you still have elements to fill in...
-//	for (auto s=1; s<30; s++) {
+	//for (auto s=1; s<1; s++) {
 
 
 	std::list<Mesh::Vertex_index> new_sm_boundary; //used for managing boundary updates
 
 
-	if (sm_boundaries.begin()->size()==3 ){ //can only happen if user with odd number of nodes around initial boundary
-		auto j = sm_boundaries.begin()->end();
-		m.add_face (*std::next(j,-1),*std::next(j,-2),*std::next(j,-3));
-		sm_boundaries.pop_front();
-			continue;
-		}
+	if (sm_boundaries.begin()->size()<=6){ //not supposed to happen - illegal quad mesh!
+
 
 		if (sm_boundaries.begin()->size()==6 ){ //down to 6 nodes - mesh using predefined templates
 		std::cout<<"Activating six node splitter!: "<<m.point(*sm_boundaries.begin()->begin())<<"\n";
@@ -593,14 +599,19 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 			continue;
 		}
 
-		if (sm_boundaries.begin()->size()==4) { //down to 4 nodes - make element
+		else if (sm_boundaries.begin()->size()==4) { //down to 4 nodes - make element
 
 			auto j = sm_boundaries.begin()->end();
 			std::cout << "Creating 4-element Node!\n";
 			m.add_face (*std::next(j,-1),*std::next(j,-2),*std::next(j,-3),*std::next(j,-4));
 			sm_boundaries.pop_front();
 			continue;
+		} else  {
+			std::cout<<"Illegal amount of boundary nodes! - breaking\n";
+			break;
 		}
+
+	}
 
 
 		std::cout << "Check if elements need to be split\n";
@@ -819,7 +830,7 @@ while (!sm_boundaries.empty()) { //as long as you still have elements to fill in
 			nodeEliminatedFlag=false;
 			continue;
 		}
-		if ((Dij>Kernel::FT(1.453*1.453)*Di) && CGAL::right_turn(last_v,curr_v,next_v) && !isCollinear(last_v,curr_v,next_v) || midVertexFlag==true){ //check if middle node needs to be added
+		if (i!=std::next(sm_boundaries.begin()->end(),-1) && (Dij>Kernel::FT(1.453*1.453)*Di) && CGAL::right_turn(last_v,curr_v,next_v) && !isCollinear(last_v,curr_v,next_v) || midVertexFlag==true){ //check if middle node needs to be added
 			std::cout << "need to add middle node!\n";
 			if (!midVertexFlag) {
 				auto mid_node1 = m.point(old_index)+(new_v-m.point(old_index))/2;
@@ -1127,17 +1138,20 @@ for (auto i=m.vertices_begin(); i!=m.vertices_end(); i++) {
 
 //testing node placement using ipe
 std::ofstream myFile;
+std::ifstream Template;
+
+Template.open("ipe2.xml");
 myFile.open("Ipe.xml");
+
+
+while (std::getline(Template,line)) {
+	myFile <<line<<"\n";
+}
+
 myFile << "<page>\n";
-for (auto i = m.vertices().begin(); i!=m.vertices().end(); i++) {
-//	std::cout <<m.point(*i);
-//	std::cout<<"\n";
 
-
+for (auto i=m.vertices_begin(); i!=m.vertices_end(); i++) {
 myFile << "<use name=\"mark/disk(sx)\" " << "pos= \"" << m.point(*i).x() << " " << m.point(*i).y() << "\" size=\"normal\" stroke=\"black\"/>\n";
-
-
-
 }
 
 for (auto i = m.edges_begin(); i!=m.edges_end(); i++) {
@@ -1153,6 +1167,7 @@ myFile << "<path stroke = \"black\"> \n"  << p1 <<" m \n" << p2 << " l \n" << "<
 
 }
 myFile << "</page>\n";
+myFile << "</ipe>\n";
 myFile.close();
 }
 
